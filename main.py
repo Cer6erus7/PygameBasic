@@ -2,8 +2,11 @@ import pygame
 
 
 class Game:
-    RIGHT_WALK = False
+    RIGHT_WALK = True
     LEFT_WALK = False
+    IS_JUMP = False
+    PLAYER_SPEED = 5
+    JUMP_COUNT = 10
 
     def __init__(self):
         pygame.init()
@@ -14,9 +17,7 @@ class Game:
         self.bg = pygame.transform.scale(self.bg, (1200, 800))
 
         self.bg_sound = pygame.mixer.Sound("sounds//comic5-25269.mp3")
-
-        self.clock = pygame.time.Clock()
-        self.bg_sound.play()
+        self.bg_sound.play(loops=True)
 
         pygame.display.set_caption("My First Pygame!")
         pygame.display.set_icon(self.icon)
@@ -40,6 +41,10 @@ class Game:
 
         self.animation_count = 1
         self.bg_x = 0
+        self.player_x = 200
+        self.player_y = 600
+
+        self.clock = pygame.time.Clock()
 
     def r_walk(self):
         """
@@ -47,7 +52,7 @@ class Game:
         :return: None
         """
         if Game.RIGHT_WALK:
-            self.screen.blit(self.walk_right[self.animation_count], (600, 600))
+            self.screen.blit(self.walk_right[self.animation_count], (self.player_x, self.player_y))
             if self.animation_count == len(self.walk_right) - 1:
                 self.animation_count = 0
             else:
@@ -59,11 +64,29 @@ class Game:
         :return: None
         """
         if Game.LEFT_WALK:
-            self.screen.blit(self.walk_left[self.animation_count], (600, 600))
+            self.screen.blit(self.walk_left[self.animation_count], (self.player_x, self.player_y))
             if self.animation_count == len(self.walk_right) - 1:
                 self.animation_count = 0
             else:
                 self.animation_count += 1
+
+    def pressed_keys(self):
+        """
+        Player movement when holds the keys.
+        :return:
+        """
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_a]:
+            if self.player_x > 50:
+                self.player_x -= Game.PLAYER_SPEED
+                Game.RIGHT_WALK = False
+                Game.LEFT_WALK = True
+
+        elif keys[pygame.K_d]:
+            if self.player_x < 400:
+                self.player_x += Game.PLAYER_SPEED
+                Game.LEFT_WALK = False
+                Game.RIGHT_WALK = True
 
     def bg_movement(self):
         """
@@ -72,36 +95,46 @@ class Game:
         """
         self.screen.blit(self.bg, (self.bg_x, 0))
         self.screen.blit(self.bg, (self.bg_x + 1200, 0))
-        self.screen.blit(self.bg, (self.bg_x - 1200, 0))
 
-        if Game.LEFT_WALK:
-            if self.bg_x == 1200:
-                self.bg_x = 0
-            else:
-                self.bg_x += 2
+        if self.bg_x == -1200:
+            self.bg_x = 0
+        else:
+            self.bg_x -= 2
 
-        elif Game.RIGHT_WALK:
-            if self.bg_x == -1200:
-                self.bg_x = 0
-            else:
-                self.bg_x -= 2
-
-    def player_stand(self):
+    def jump(self):
         """
-        When player doesn't walk, it stands on place.
+        Player jumps when "w" has been pressed. Used Static variables and some formula for the smoother jump
         :return:
         """
-        if not Game.LEFT_WALK and not Game.RIGHT_WALK:
-            self.screen.blit(self.standing_player, (600, 600))
+        keys = pygame.key.get_pressed()
+
+        if not Game.IS_JUMP and keys[pygame.K_w]:
+            Game.IS_JUMP = True
+
+        elif Game.IS_JUMP:
+            if Game.JUMP_COUNT >= -10:
+                if Game.JUMP_COUNT > 0:
+                    self.player_y -= (Game.JUMP_COUNT ** 2) / 2
+                else:
+                    self.player_y += (Game.JUMP_COUNT ** 2) / 2
+                Game.JUMP_COUNT -= 1
+            else:
+                Game.IS_JUMP = False
+                Game.JUMP_COUNT = 10
 
     def run_game(self):
+        """
+        Loop for the game. A whole game works when this loop is working.
+        :return:
+        """
         runner = True
         while runner:
 
             self.bg_movement()
-            self.player_stand()
+            self.pressed_keys()
             self.r_walk()
             self.l_walk()
+            self.jump()
 
             pygame.display.update()
 
@@ -109,19 +142,6 @@ class Game:
                 if event.type == pygame.QUIT:
                     runner = False
                     quit()
-
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_d:
-                        Game.LEFT_WALK = False
-                        Game.RIGHT_WALK = True
-
-                    elif event.key == pygame.K_a:
-                        Game.RIGHT_WALK = False
-                        Game.LEFT_WALK = True
-
-                    elif event.key == pygame.K_s:
-                        Game.RIGHT_WALK = False
-                        Game.LEFT_WALK = False
 
             self.clock.tick(20)
 
