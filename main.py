@@ -12,8 +12,8 @@ class Game:
         pygame.init()
 
         self.screen = pygame.display.set_mode((1200, 800))
-        self.icon = pygame.image.load("images//game.png")
-        self.bg = pygame.image.load("images//background.png")
+        self.icon = pygame.image.load("images//game.png").convert_alpha()
+        self.bg = pygame.image.load("images//background.png").convert_alpha()
         self.bg = pygame.transform.scale(self.bg, (1200, 800))
 
         self.bg_sound = pygame.mixer.Sound("sounds//comic5-25269.mp3")
@@ -23,21 +23,26 @@ class Game:
         pygame.display.set_icon(self.icon)
 
         self.walk_left = [
-            pygame.image.load("images//player_left//Lstep1.png"),
-            pygame.image.load("images//player_left//Lstep2.png"),
-            pygame.image.load("images//player_left//Lstep3.png"),
-            pygame.image.load("images//player_left//Lstep4.png")
+            pygame.image.load("images//player_left//Lstep1.png").convert_alpha(),
+            pygame.image.load("images//player_left//Lstep2.png").convert_alpha(),
+            pygame.image.load("images//player_left//Lstep3.png").convert_alpha(),
+            pygame.image.load("images//player_left//Lstep4.png").convert_alpha()
         ]
 
         self.walk_right = [
-            pygame.image.load("images//player_right//Rstep1.png"),
-            pygame.image.load("images//player_right//Rstep2.png"),
-            pygame.image.load("images//player_right//Rstep3.png"),
-            pygame.image.load("images//player_right//Rstep4.png")
+            pygame.image.load("images//player_right//Rstep1.png").convert_alpha(),
+            pygame.image.load("images//player_right//Rstep2.png").convert_alpha(),
+            pygame.image.load("images//player_right//Rstep3.png").convert_alpha(),
+            pygame.image.load("images//player_right//Rstep4.png").convert_alpha()
         ]
 
-        self.standing_player = pygame.image.load("images//player_stand.png")
-        self.standing_player = pygame.transform.scale(self.standing_player, (36, 46))
+        self.enemies = []
+
+        self.ghost = pygame.image.load("images//ghost.png").convert_alpha()
+        self.ghost = pygame.transform.scale(self.ghost, (46, 56))
+
+        self.portal = pygame.image.load("images//portal.png").convert_alpha()
+        self.portal = pygame.transform.scale(self.portal, (120, 130))
 
         self.animation_count = 1
         self.bg_x = 0
@@ -46,29 +51,20 @@ class Game:
 
         self.clock = pygame.time.Clock()
 
-    def r_walk(self):
+    def walk(self):
         """
-        Method for right walking, using static variable for this
+        Method for left or right walking, using static variable for this
         :return: None
         """
         if Game.RIGHT_WALK:
             self.screen.blit(self.walk_right[self.animation_count], (self.player_x, self.player_y))
-            if self.animation_count == len(self.walk_right) - 1:
-                self.animation_count = 0
-            else:
-                self.animation_count += 1
-
-    def l_walk(self):
-        """
-        Method for left walking, using static variable for this
-        :return: None
-        """
-        if Game.LEFT_WALK:
+        elif Game.LEFT_WALK:
             self.screen.blit(self.walk_left[self.animation_count], (self.player_x, self.player_y))
-            if self.animation_count == len(self.walk_right) - 1:
-                self.animation_count = 0
-            else:
-                self.animation_count += 1
+
+        if self.animation_count == len(self.walk_right) - 1:
+            self.animation_count = 0
+        else:
+            self.animation_count += 1
 
     def pressed_keys(self):
         """
@@ -95,6 +91,7 @@ class Game:
         """
         self.screen.blit(self.bg, (self.bg_x, 0))
         self.screen.blit(self.bg, (self.bg_x + 1200, 0))
+        self.screen.blit(self.portal, (1000, 530))
 
         if self.bg_x == -1200:
             self.bg_x = 0
@@ -122,19 +119,37 @@ class Game:
                 Game.IS_JUMP = False
                 Game.JUMP_COUNT = 10
 
+    def enemy(self):
+        """
+        Enemy for the game, they spawn on the map and walk to the player.
+        :return:
+        """
+        player_rect = self.walk_left[0].get_rect(topleft=(self.player_x, self.player_y))
+
+        if self.enemies:
+            for enemy in self.enemies:
+                self.screen.blit(self.ghost, enemy)
+                enemy.x -= 5
+
+                if player_rect.colliderect(enemy):
+                    print("You lost!")
+
     def run_game(self):
         """
         Loop for the game. A whole game works when this loop is working.
         :return:
         """
+        ghost_timer = pygame.USEREVENT + 1
+        pygame.time.set_timer(ghost_timer, 2500)
+
         runner = True
         while runner:
 
             self.bg_movement()
             self.pressed_keys()
-            self.r_walk()
-            self.l_walk()
+            self.walk()
             self.jump()
+            self.enemy()
 
             pygame.display.update()
 
@@ -142,8 +157,10 @@ class Game:
                 if event.type == pygame.QUIT:
                     runner = False
                     quit()
+                if event.type == ghost_timer:
+                    self.enemies.append(self.ghost.get_rect(topleft=(1000, 580)))
 
-            self.clock.tick(20)
+            self.clock.tick(30)
 
 
 if __name__ == "__main__":
