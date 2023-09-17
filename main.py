@@ -36,6 +36,14 @@ class Game:
             pygame.image.load("images//player_right//Rstep4.png").convert_alpha()
         ]
 
+        self.health_bars = [
+            pygame.image.load("images//healthbar//health1.png").convert_alpha(),
+            pygame.image.load("images//healthbar//health2.png").convert_alpha(),
+            pygame.image.load("images//healthbar//health3.png").convert_alpha(),
+            pygame.image.load("images//healthbar//health4.png").convert_alpha(),
+            pygame.image.load("images//healthbar//health5.png").convert_alpha()
+        ]
+
         self.enemies = []
 
         self.ghost = pygame.image.load("images//ghost.png").convert_alpha()
@@ -43,6 +51,10 @@ class Game:
 
         self.portal = pygame.image.load("images//portal.png").convert_alpha()
         self.portal = pygame.transform.scale(self.portal, (120, 130))
+
+        self.hp_index = 0
+        self.enemy_touch = 2
+        self.damage_timer = 15
 
         self.animation_count = 1
         self.bg_x = 0
@@ -119,9 +131,18 @@ class Game:
                 Game.IS_JUMP = False
                 Game.JUMP_COUNT = 10
 
+    def health_bar(self):
+        """
+        Health bar that shows how many lives the player have.
+        :return:
+        """
+        self.health_bars[self.hp_index] = pygame.transform.scale(self.health_bars[self.hp_index], (370, 100))
+        self.screen.blit(self.health_bars[self.hp_index], (30, 30))
+
     def enemy(self):
         """
-        Enemy for the game, they spawn on the map and walk to the player.
+        Enemy for the game, they spawn on the map and walk to the player. If player
+        crashed with enemies it loses its hp.
         :return:
         """
         player_rect = self.walk_left[0].get_rect(topleft=(self.player_x, self.player_y))
@@ -131,8 +152,21 @@ class Game:
                 self.screen.blit(self.ghost, enemy)
                 enemy.x -= 5
 
-                if player_rect.colliderect(enemy):
-                    print("You lost!")
+                if player_rect.colliderect(enemy) and self.damage_timer == 15:
+                    self.enemy_touch -= 1
+
+    def take_damage(self):
+        """
+        When an enemy hit the player twice, it will take damage
+        :return:
+        """
+        if self.enemy_touch <= 0 and self.damage_timer == 15:
+            self.hp_index += 1
+            self.enemy_touch = 2
+            self.damage_timer = 0
+
+        if 0 <= self.damage_timer < 15:
+            self.damage_timer += 1
 
     def run_game(self):
         """
@@ -146,10 +180,12 @@ class Game:
         while runner:
 
             self.bg_movement()
+            self.health_bar()
             self.pressed_keys()
             self.walk()
             self.jump()
             self.enemy()
+            self.take_damage()
 
             pygame.display.update()
 
@@ -157,6 +193,7 @@ class Game:
                 if event.type == pygame.QUIT:
                     runner = False
                     quit()
+
                 if event.type == ghost_timer:
                     self.enemies.append(self.ghost.get_rect(topleft=(1000, 580)))
 
