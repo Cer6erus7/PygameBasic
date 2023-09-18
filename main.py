@@ -2,6 +2,7 @@ import pygame
 
 
 class Game:
+    IS_GAME = True
     RIGHT_WALK = True
     LEFT_WALK = False
     IS_JUMP = False
@@ -43,6 +44,8 @@ class Game:
             pygame.image.load("images//healthbar//health4.png").convert_alpha(),
             pygame.image.load("images//healthbar//health5.png").convert_alpha()
         ]
+
+        self.gradient = True
 
         self.enemies = []
 
@@ -136,8 +139,11 @@ class Game:
         Health bar that shows how many lives the player have.
         :return:
         """
-        self.health_bars[self.hp_index] = pygame.transform.scale(self.health_bars[self.hp_index], (370, 100))
-        self.screen.blit(self.health_bars[self.hp_index], (30, 30))
+        if self.hp_index == 5:
+            Game.IS_GAME = False
+        else:
+            self.health_bars[self.hp_index] = pygame.transform.scale(self.health_bars[self.hp_index], (370, 100))
+            self.screen.blit(self.health_bars[self.hp_index], (30, 30))
 
     def enemy(self):
         """
@@ -148,9 +154,12 @@ class Game:
         player_rect = self.walk_left[0].get_rect(topleft=(self.player_x, self.player_y))
 
         if self.enemies:
-            for enemy in self.enemies:
+            for i, enemy in enumerate(self.enemies):
                 self.screen.blit(self.ghost, enemy)
                 enemy.x -= 5
+
+                if enemy.x == -70:
+                    self.enemies.pop(i)
 
                 if player_rect.colliderect(enemy) and self.damage_timer == 15:
                     self.enemy_touch -= 1
@@ -168,6 +177,44 @@ class Game:
         if 0 <= self.damage_timer < 15:
             self.damage_timer += 1
 
+    def game_over(self):
+        """
+        Game over screen, gradient for this, restart button and exit button.
+        :return:
+        """
+        mouse = pygame.mouse.get_pos()
+
+        black_gradient = pygame.image.load('images//black_gradient.png').convert_alpha()
+        black_gradient = pygame.transform.scale(black_gradient, (1200, 1400))
+
+        if self.gradient:
+            self.screen.blit(black_gradient, (0, 0))
+            self.gradient = False
+
+        label_gm = pygame.font.Font("fonts//Lato-Black.ttf", 120)
+        label_gm = label_gm.render("Game Over", False, (94, 17, 209))
+        self.screen.blit(label_gm, (300, 190))
+
+        l_restart = pygame.font.Font("fonts//Lato-Black.ttf", 70)
+        l_restart = l_restart.render(">Restart<", False, (186, 17, 212))
+        rect_restart = l_restart.get_rect(topleft=(440, 360))
+        self.screen.blit(l_restart, rect_restart)
+
+        l_exit = pygame.font.Font("fonts//Lato-Black.ttf", 60)
+        l_exit = l_exit.render(">Exit<", False, (150, 17, 57))
+        rect_exit = l_exit.get_rect(topleft=(515, 480))
+        self.screen.blit(l_exit, rect_exit)
+
+        if rect_restart.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
+            self.enemies.clear()
+            self.hp_index = 0
+            self.player_x = 200
+            self.player_y = 600
+            self.gradient = True
+            Game.IS_GAME = True
+        elif rect_exit.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
+            exit()
+
     def run_game(self):
         """
         Loop for the game. A whole game works when this loop is working.
@@ -179,13 +226,16 @@ class Game:
         runner = True
         while runner:
 
-            self.bg_movement()
-            self.health_bar()
-            self.pressed_keys()
-            self.walk()
-            self.jump()
-            self.enemy()
-            self.take_damage()
+            if Game.IS_GAME:
+                self.bg_movement()
+                self.health_bar()
+                self.pressed_keys()
+                self.walk()
+                self.jump()
+                self.enemy()
+                self.take_damage()
+            else:
+                self.game_over()
 
             pygame.display.update()
 
