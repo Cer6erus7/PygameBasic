@@ -45,6 +45,11 @@ class Game:
             pygame.image.load("images//healthbar//health5.png").convert_alpha()
         ]
 
+        self.blood_frame = pygame.image.load("images//blood_frame.png").convert_alpha()
+        self.blood_frame = pygame.transform.scale(self.blood_frame, (1350, 950))
+        self.is_blood_frame = False
+        self.blood_frame_timer = 10
+
         self.gradient = True
 
         self.enemies = []
@@ -142,7 +147,7 @@ class Game:
         if self.hp_index == 5:
             Game.IS_GAME = False
         else:
-            self.health_bars[self.hp_index] = pygame.transform.scale(self.health_bars[self.hp_index], (370, 100))
+            self.health_bars[self.hp_index] = pygame.transform.scale(self.health_bars[self.hp_index], (400, 100))
             self.screen.blit(self.health_bars[self.hp_index], (30, 30))
 
     def enemy(self):
@@ -173,9 +178,24 @@ class Game:
             self.hp_index += 1
             self.enemy_touch = 2
             self.damage_timer = 0
+            self.is_blood_frame = True
+
+        self.blood_f()
 
         if 0 <= self.damage_timer < 15:
             self.damage_timer += 1
+
+    def blood_f(self):
+        """
+        Bloody frame for taking a damage
+        :return:
+        """
+        if self.is_blood_frame and self.blood_frame_timer > 0:
+            self.screen.blit(self.blood_frame, (-75, -75))
+            self.blood_frame_timer -= 1
+        elif self.blood_frame_timer == 0:
+            self.blood_frame_timer = 10
+            self.is_blood_frame = False
 
     def game_over(self):
         """
@@ -202,7 +222,7 @@ class Game:
 
         l_exit = pygame.font.Font("fonts//Lato-Black.ttf", 60)
         l_exit = l_exit.render(">Exit<", False, (150, 17, 57))
-        rect_exit = l_exit.get_rect(topleft=(515, 480))
+        rect_exit = l_exit.get_rect(topleft=(510, 480))
         self.screen.blit(l_exit, rect_exit)
 
         if rect_restart.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
@@ -210,6 +230,7 @@ class Game:
             self.hp_index = 0
             self.player_x = 200
             self.player_y = 600
+            self.is_blood_frame = False
             self.gradient = True
             Game.IS_GAME = True
         elif rect_exit.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
