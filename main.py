@@ -65,6 +65,17 @@ class Game:
             portal = pygame.image.load(f'images//portals//portal{i}.png').convert_alpha()
             self.portal_animation.append(portal)
 
+        self.bullet = pygame.image.load('images//bullet.png').convert_alpha()
+        self.bullet = pygame.transform.scale(self.bullet, (40, 40))
+        self.bullet_timer = 20
+        self.amount_of_bullets = 5
+        self.bullets = []
+
+        self.ammo = pygame.image.load('images//ammo.png').convert_alpha()
+        self.ammo = pygame.transform.scale(self.ammo, (80, 60))
+        self.black_bullet = pygame.image.load('images//black_bullet.png').convert_alpha()
+        self.black_bullet = pygame.transform.scale(self.black_bullet, (80, 60))
+
         self.hp_index = 0
         self.enemy_touch = 2
         self.damage_timer = 15
@@ -149,6 +160,48 @@ class Game:
                 Game.IS_JUMP = False
                 Game.JUMP_COUNT = 10
 
+    def shoot(self):
+        """
+        Player shoot when clicking on space
+        :return:
+        """
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE] and self.bullet_timer == 20 and self.amount_of_bullets != 0:
+            self.bullets.append(self.bullet.get_rect(topleft=(self.player_x + 30, self.player_y)))
+            self.bullet_timer = 0
+            self.amount_of_bullets -= 1
+        elif self.bullet_timer < 20:
+            self.bullet_timer += 1
+
+        if self.bullets:
+            for i, el in enumerate(self.bullets):
+                self.screen.blit(self.bullet, (el.x, el.y))
+                el.x += 4
+
+                if el.x > 1200:
+                    self.bullets.pop(i)
+
+                if self.enemies:
+                    for index, enemy in enumerate(self.enemies):
+                        if el.colliderect(enemy):
+                            self.enemies.pop(index)
+                            self.bullets.pop(i)
+
+    def ammo_bar(self):
+        """
+        Bar that shows how many bullets does the player have.
+        :return:
+        """
+        black_x = 0
+        for i in range(5):
+            self.screen.blit(self.black_bullet, (50 + black_x, 155))
+            black_x += 35
+
+        ammo_x = 0
+        for i in range(self.amount_of_bullets):
+            self.screen.blit(self.ammo, (50 + ammo_x, 155))
+            ammo_x += 35
+
     def health_bar(self):
         """
         Health bar that shows how many lives the player have.
@@ -177,7 +230,6 @@ class Game:
             self.portal_timer = 0
         else:
             self.portal_timer += 1
-
 
     def enemy(self):
         """
@@ -258,6 +310,7 @@ class Game:
         self.screen.blit(l_exit, rect_exit)
 
         if rect_restart.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
+            self.bullets.clear()
             self.enemies.clear()
             self.hp_index = 0
             self.player_x = 200
@@ -282,9 +335,11 @@ class Game:
             if Game.IS_GAME:
                 self.bg_movement()
                 self.health_bar()
+                self.ammo_bar()
                 self.pressed_keys()
                 self.walk()
                 self.jump()
+                self.shoot()
                 self.enemy()
                 self.take_damage()
             else:
