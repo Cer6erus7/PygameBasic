@@ -18,6 +18,7 @@ class Game:
         self.bg = pygame.transform.scale(self.bg, (1200, 800))
 
         self.bg_sound = pygame.mixer.Sound("sounds//comic5-25269.mp3")
+        self.bg_sound.set_volume(0.7)
         self.bg_sound.play(loops=True)
 
         pygame.display.set_caption("My First Pygame!")
@@ -48,7 +49,7 @@ class Game:
         self.blood_frame = pygame.image.load("images//blood_frame.png").convert_alpha()
         self.blood_frame = pygame.transform.scale(self.blood_frame, (1350, 950))
         self.is_blood_frame = False
-        self.blood_frame_timer = 10
+        self.blood_frame_timer = 15
 
         self.gradient = True
 
@@ -57,8 +58,12 @@ class Game:
         self.ghost = pygame.image.load("images//ghost.png").convert_alpha()
         self.ghost = pygame.transform.scale(self.ghost, (46, 56))
 
-        self.portal = pygame.image.load("images//portal.png").convert_alpha()
-        self.portal = pygame.transform.scale(self.portal, (120, 130))
+        self.portal_animation = []
+        self.portal_count = 0
+        self.portal_timer = 3
+        for i in range(1, 15):
+            portal = pygame.image.load(f'images//portals//portal{i}.png').convert_alpha()
+            self.portal_animation.append(portal)
 
         self.hp_index = 0
         self.enemy_touch = 2
@@ -111,7 +116,7 @@ class Game:
         """
         self.screen.blit(self.bg, (self.bg_x, 0))
         self.screen.blit(self.bg, (self.bg_x + 1200, 0))
-        self.screen.blit(self.portal, (1000, 530))
+        self.animate_portal()
 
         if self.bg_x == -1200:
             self.bg_x = 0
@@ -129,6 +134,11 @@ class Game:
             Game.IS_JUMP = True
 
         elif Game.IS_JUMP:
+            if Game.JUMP_COUNT == 10:
+                jump_sound = pygame.mixer.Sound('sounds//jump.mp3')
+                jump_sound.set_volume(0.3)
+                jump_sound.play()
+
             if Game.JUMP_COUNT >= -10:
                 if Game.JUMP_COUNT > 0:
                     self.player_y -= (Game.JUMP_COUNT ** 2) / 2
@@ -149,6 +159,25 @@ class Game:
         else:
             self.health_bars[self.hp_index] = pygame.transform.scale(self.health_bars[self.hp_index], (400, 100))
             self.screen.blit(self.health_bars[self.hp_index], (30, 30))
+
+    def animate_portal(self):
+        """
+        Animated portal for enemies
+        :return:
+        """
+        portal = self.portal_animation[self.portal_count]
+        portal = pygame.transform.scale(portal, (150, 230))
+        self.screen.blit(portal, (1000, 460))
+
+        if self.portal_count == len(self.portal_animation) - 1 and self.portal_timer == 3:
+            self.portal_count = 3
+            self.portal_timer = 0
+        elif self.portal_timer == 3:
+            self.portal_count += 1
+            self.portal_timer = 0
+        else:
+            self.portal_timer += 1
+
 
     def enemy(self):
         """
@@ -179,6 +208,9 @@ class Game:
             self.enemy_touch = 2
             self.damage_timer = 0
             self.is_blood_frame = True
+            hurt_sound = pygame.mixer.Sound("sounds//hurt.wav")
+            hurt_sound.set_volume(0.5)
+            hurt_sound.play()
 
         self.blood_f()
 
@@ -194,7 +226,7 @@ class Game:
             self.screen.blit(self.blood_frame, (-75, -75))
             self.blood_frame_timer -= 1
         elif self.blood_frame_timer == 0:
-            self.blood_frame_timer = 10
+            self.blood_frame_timer = 15
             self.is_blood_frame = False
 
     def game_over(self):
@@ -213,16 +245,16 @@ class Game:
 
         label_gm = pygame.font.Font("fonts//Lato-Black.ttf", 120)
         label_gm = label_gm.render("Game Over", False, (94, 17, 209))
-        self.screen.blit(label_gm, (300, 190))
+        self.screen.blit(label_gm, (290, 190))
 
         l_restart = pygame.font.Font("fonts//Lato-Black.ttf", 70)
         l_restart = l_restart.render(">Restart<", False, (186, 17, 212))
-        rect_restart = l_restart.get_rect(topleft=(440, 360))
+        rect_restart = l_restart.get_rect(topleft=(430, 360))
         self.screen.blit(l_restart, rect_restart)
 
         l_exit = pygame.font.Font("fonts//Lato-Black.ttf", 60)
         l_exit = l_exit.render(">Exit<", False, (150, 17, 57))
-        rect_exit = l_exit.get_rect(topleft=(510, 480))
+        rect_exit = l_exit.get_rect(topleft=(500, 480))
         self.screen.blit(l_exit, rect_exit)
 
         if rect_restart.collidepoint(mouse) and pygame.mouse.get_pressed()[0]:
@@ -268,7 +300,7 @@ class Game:
                 if event.type == ghost_timer:
                     self.enemies.append(self.ghost.get_rect(topleft=(1000, 580)))
 
-            self.clock.tick(30)
+            self.clock.tick(35)
 
 
 if __name__ == "__main__":
