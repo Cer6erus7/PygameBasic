@@ -315,6 +315,7 @@ class Game:
             self.hp_index = 0
             self.player_x = 200
             self.player_y = 600
+            self.amount_of_bullets = 5
             self.is_blood_frame = False
             self.gradient = True
             Game.IS_GAME = True
